@@ -13,9 +13,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/exporter-toolkit/web"
+	"k8s.io/component-base/metrics/legacyregistry"
 	"k8s.io/klog/v2"
 
-	"github.com/clusterpedia-io/clusterpedia/pkg/metrics"
+	metricsserver "github.com/clusterpedia-io/clusterpedia/pkg/metrics/server"
 	"github.com/clusterpedia-io/clusterpedia/pkg/version"
 )
 
@@ -26,7 +27,7 @@ type ServerConfig struct {
 }
 
 func RunServer(config ServerConfig, getter ClusterMetricsWriterListGetter) {
-	durationVec := promauto.With(metrics.DefaultRegistry()).NewHistogramVec(
+	durationVec := promauto.With(legacyregistry.Registerer()).NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:        "http_request_duration_seconds",
 			Help:        "A histogram of requests for clusterpedia's kube-state-metrics metrics handler.",
@@ -48,7 +49,7 @@ func RunServer(config ServerConfig, getter ClusterMetricsWriterListGetter) {
 
 	klog.Info("Kube State Metrics Server is running...")
 	// TODO(iceber): handle error
-	_ = web.ListenAndServe(server, flags, metrics.Logger)
+	_ = web.ListenAndServe(server, flags, metricsserver.Logger)
 }
 
 func buildMetricsServer(config ServerConfig, getter ClusterMetricsWriterListGetter, durationObserver prometheus.ObserverVec) *mux.Router {
